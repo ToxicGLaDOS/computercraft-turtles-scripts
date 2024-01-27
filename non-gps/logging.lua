@@ -19,11 +19,6 @@ DEPOSITING = 4
 
 defaultState(PLANTING)
 
-NORTH = 0
-EAST = 1
-SOUTH = 2
-WEST = 3
-
 final_z = (size - 1) * (size % 2)
 
 function plant_move()

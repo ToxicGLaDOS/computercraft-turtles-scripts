@@ -1,5 +1,10 @@
 local json = require "json"
 
+NORTH = 0
+EAST = 1
+SOUTH = 2
+WEST = 3
+
 write_log = false
 
 if fs.exists("data") then
@@ -63,7 +68,7 @@ function moveForward()
 	saveData()
 	writeLog("Moving forward")
 	turtle.forward()
-	writeLog("Moved forward")	
+	writeLog("Moved forward")
 end
 
 function moveBack()
