@@ -1,9 +1,9 @@
-local json = require "json"
+local json = require ".json"
 
-NORTH = 0
-EAST = 1
-SOUTH = 2
-WEST = 3
+NORTH = "north"
+EAST = "east"
+SOUTH = "south"
+WEST = "west"
 
 write_log = false
 
@@ -11,7 +11,19 @@ if fs.exists("data") then
 	local f = fs.open("data", "r")
 	data = json.decode(f.readAll())
 else
-	data = {facing = 0, position = {x = 0, y = 0, z = 0}}
+	data = {facing = "north", position = {x = 0, y = 0, z = 0}}
+end
+
+function positionEqual(p1, p2)
+  if p1.x ~= p2.x then
+    return false
+  elseif p1.y ~= p2.y then
+    return false
+  elseif p1.z ~= p2.z then
+    return false
+  end
+
+  return true
 end
 
 function defaultState(state)
@@ -20,17 +32,187 @@ function defaultState(state)
 	end
 end
 
+function leftDirection()
+  if data.facing == NORTH then
+    return WEST
+  elseif data.facing == EAST then
+    return NORTH
+  elseif data.facing == SOUTH then
+    return EAST
+  elseif data.facing == WEST then
+    return SOUTH
+  end
+end
+
+function rightDirection()
+  if data.facing == NORTH then
+    return EAST
+  elseif data.facing == EAST then
+    return SOUTH
+  elseif data.facing == SOUTH then
+    return WEST
+  elseif data.facing == WEST then
+    return NORTH
+  end
+end
+
+function faceDirection(direction)
+  if direction ~= NORTH and direction ~= EAST and direction ~= SOUTH and direction ~= WEST then
+    error(string.format("Invalid direction, \"%s\". Expected one of %s, %s, %s, %s", direction, NORTH, EAST, SOUTH, WEST))
+  end
+
+  if data.facing ~= direction then
+    if direction == leftDirection() then
+      turnLeft()
+    elseif direction == rightDirection() then
+      turnRight()
+    else
+      turnRight()
+      turnRight()
+    end
+  end
+end
+
+---Move the turtle to a certain x value.
+---@param x integer The x value to go to.
+---@param dig boolean Whether to dig to get to the desired position or not.
+---@return boolean Whether the movement was successful.
+---@return string Error message if any. Empty string if movement was successful.
+function gotoX(x, dig)
+  print(x, data.position.x)
+  if x ~= data.position.x then
+    local delta = x - data.position.x
+    if delta > 0 then
+      faceDirection(EAST)
+    else
+      faceDirection(WEST)
+    end
+    print(delta)
+    for _ = 1,math.abs(delta) do
+      if dig then
+        while turtle.detect() do
+          turtle.dig()
+        end
+      end
+      local success, error_message = moveForward()
+      if not success then
+        return false, error_message
+      end
+    end
+  end
+
+  assert(data.position.x == x, string.format("gotoX failed. Turtle is at x value %s expected x value %s", data.position.x, x))
+  return true, ""
+end
+
+---Move the turtle to a certain z value.
+---@param z integer The z value to go to.
+---@param dig boolean Whether to dig to get to the desired position or not.
+---@return boolean Whether the movement was successful.
+---@return string Error message if any. Empty string if movement was successful.
+function gotoZ(z, dig)
+  if z ~= data.position.z then
+    local delta = z - data.position.z
+    -- For some reason minecraft has north pointed
+    -- toward negative Z and south pointed toward positive Z
+    if delta > 0 then
+      faceDirection(SOUTH)
+    else
+      faceDirection(NORTH)
+    end
+    for _ = 1,math.abs(delta) do
+      if dig then
+        while turtle.detect() do
+          turtle.dig()
+        end
+      end
+      local success, error_message = moveForward()
+      if not success then
+        return false, error_message
+      end
+    end
+  end
+
+  assert(data.position.z == z, string.format("gotoZ failed. Turtle is at z value %s expected z value %s", data.position.z, z))
+  return true, ""
+end
+
+
+---Move the turtle to a certain y value.
+---@param y integer The y value to go to.
+---@param dig boolean Whether to dig to get to the desired position or not.
+---@return boolean Whether the movement was successful.
+---@return string Error message if any. Empty string if movement was successful.
+function gotoY(y, dig)
+
+  if y ~= data.position.y then
+    local delta = y - data.position.y
+    local movementFunction = nil
+    local digFunction = nil
+    local detectFunction = nil
+
+    if delta > 0 then
+      movementFunction = moveUp
+      digFunction = turtle.digUp
+      detectFunction = turtle.detectUp
+    else
+      movementFunction = moveDown
+      digFunction = turtle.digDown
+      detectFunction = turtle.detectDown
+    end
+
+    for _ = 1,math.abs(delta) do
+      if dig then
+        while detectFunction() do
+          digFunction()
+        end
+      end
+      local success, error_message = movementFunction()
+      if not success then
+        return false, error_message
+      end
+    end
+  end
+
+  assert(data.position.y == y, string.format("gotoY failed. Turtle is at y value %s expected y value %s", data.position.y, y))
+  return true, ""
+end
+
+---Move the turtle to a certain position.
+---@param position table The position value to go to.
+---@param dig boolean Whether to dig to get to the desired position or not.
+---@return boolean Whether the movement was successful.
+---@return string Error message if any. Empty string if movement was successful.
+function gotoPosition(position, dig)
+  local success, error_message = gotoX(position.x, dig)
+  if not success then
+    return false, error_message
+  end
+
+  success, error_message = gotoZ(position.z, dig)
+  if not success then
+    return false, error_message
+  end
+  success, error_message = gotoY(position.y, dig)
+  if success then
+    return false, error_message
+  end
+
+  assert(positionEqual(data.position, position), string.format("gotoPosition ended at %s expected %s", data.position, position))
+  return true, ""
+end
+
 function findItemInInventory(item_name)
 	for i=1,16 do
 		details = turtle.getItemDetail(i)
 		if details ~= nil then
 			if details.name == item_name then
-				return i
+				return true, i
 			end
 		end
 	end
 
-	return 0
+	return false, nil
 end
 
 function find_biggest_item_stack(item_name)
@@ -57,51 +239,43 @@ end
 
 function moveForward()
 	if data.facing == NORTH then
-		data.position.z = data.position.z + 1
+		data.position.z = data.position.z - 1
 	elseif data.facing == EAST then
 		data.position.x = data.position.x + 1
 	elseif data.facing == SOUTH then
-		data.position.z = data.position.z - 1
+		data.position.z = data.position.z + 1
 	elseif data.facing == WEST then
 		data.position.x = data.position.x - 1
 	end
 	saveData()
-	writeLog("Moving forward")
-	turtle.forward()
-	writeLog("Moved forward")
+	return turtle.forward()
 end
 
 function moveBack()
 	if data.facing == NORTH then
-		data.position.z = data.position.z - 1
+		data.position.z = data.position.z + 1
 	elseif data.facing == EAST then
 		data.position.x = data.position.x - 1
 	elseif data.facing == SOUTH then
-		data.position.z = data.position.z + 1
+		data.position.z = data.position.z - 1
 	elseif data.facing == WEST then
 		data.position.x = data.position.x + 1
 	end
 	saveData()
-	writeLog("Moving backward")
-	turtle.back()
-	writeLog("Moved backward")	
+	return turtle.back()
 end
 
 
 function moveDown()
 	data.position.y = data.position.y - 1
 	saveData()
-	writeLog("Moving down")
-	turtle.down()
-	writeLog("Moved down")
+	return turtle.down()
 end
 
 function moveUp()
 	data.position.y = data.position.y + 1
 	saveData()
-	writeLog("Moving up")
-	turtle.up()
-	writeLog("Moved up")
+	return turtle.up()
 end
 
 
@@ -116,9 +290,7 @@ function turnRight()
 		data.facing = NORTH
 	end
 	saveData()
-	writeLog("Turning right")
 	turtle.turnRight()
-	writeLog("Turned right")
 end
 
 
@@ -133,9 +305,7 @@ function turnLeft()
 		data.facing = SOUTH
 	end
 	saveData()
-	writeLog("Turning left")
 	turtle.turnLeft()
-	writeLog("Turned left")
 end
 
 function findNonfullStack(item)
@@ -239,7 +409,7 @@ function hasEmptySlot()
 		local amount = turtle.getItemCount(i)
 		if amount == 0 then
 			return true
-    end		
+    end
 	end
 
 	return false

@@ -1,7 +1,13 @@
 -- This script the turtle to start in the bottom left of your farming area
 
+local success, err = pcall(require, ".non-gps.util")
 
-local util require "non-gps.util"
+if not success then
+  h = fs.open("error.txt", "w")
+  h.write(err)
+  h.close()
+  error("Failed to get utils")
+end
 
 size = 10
 
@@ -131,6 +137,8 @@ while true do
     harvesting()
   elseif data.state == RETURNING_HOME then
     returning_home()
+  else
+    print(string.format("Invalid state %s", data.state))
   end
 end
 

@@ -4,7 +4,7 @@
 -- The turtle should also start with at least one sapling in it's inventory
 -- more will make things go faster, but one should be enough to kick start it
 
-local util = require "util"
+local util = require "non-gps.util"
 
 size = 17
 
@@ -22,8 +22,8 @@ defaultState(PLANTING)
 final_z = (size - 1) * (size % 2)
 
 function plant_move()
-	slot = findItemInInventory(sapling_name)
-	if slot ~= 0 then
+	found, slot = findItemInInventory(sapling_name)
+	if found then
 		turtle.select(slot)
 		if data.position.x % 3 == 2 and data.position.z % 3 == 2 then
 			turtle.placeDown()
@@ -116,12 +116,12 @@ function cutting_tree()
 end
 
 function depositing()
-	if data.position.z == 0 and data.position.x == 0 and data.facing == 3 then
+	if data.position.z == 0 and data.position.x == 0 and data.facing == WEST then
 		moveForward()
 		turtle.suckUp()
 		if turtle.getFuelLevel() < 5 * size * size then
-			slot = findItemInInventory("minecraft:charcoal")
-			if slot ~= 0 then
+			found, slot = findItemInInventory("minecraft:charcoal")
+			if found then
 				turtle.select(slot)
 				turtle.refuel()
 			end
@@ -136,8 +136,8 @@ function depositing()
 		turtle.dig()
 		moveForward()
 		
-		slot = findItemInInventory("minecraft:birch_log")
-		if slot ~= 0 then
+		found, slot = findItemInInventory("minecraft:birch_log")
+		if found then
 			turtle.select(slot)
 			turtle.dropDown()
 		end
@@ -149,19 +149,19 @@ function depositing()
 		turnLeft()
 
 		-- Deposit into fuel slot of furnace
-		slot = findItemInInventory("minecraft:charcoal")
-		if slot ~= 0 then
+		found, slot = findItemInInventory("minecraft:charcoal")
+		if found then
 			turtle.select(slot)
 			turtle.drop()
 		end
 		turnLeft()
 
 		-- Deposit into chest
-		slot = findItemInInventory("minecraft:charcoal")
-		while slot ~= 0 do
+		found, slot = findItemInInventory("minecraft:charcoal")
+		while found do
 			turtle.select(slot)
 			turtle.drop()
-			slot = findItemInInventory("minecraft:charcoal")
+			found, slot = findItemInInventory("minecraft:charcoal")
 		end
 
 		-- Deposit into chest
@@ -175,19 +175,19 @@ function depositing()
 		end
 
 		-- Deposit into chest
-		slot = findItemInInventory("minecraft:stick")
-		while slot ~= 0 do
+		found, slot = findItemInInventory("minecraft:stick")
+		while found do
 			turtle.select(slot)
 			turtle.drop()
-			slot = findItemInInventory("minecraft:stick")
+			found, slot = findItemInInventory("minecraft:stick")
 		end
 
 		-- Deposit into chest
-		slot = findItemInInventory(log_name)
-		while slot ~= 0 do
+		found, slot = findItemInInventory(log_name)
+		while found do
 			turtle.select(slot)
 			turtle.drop()
-			slot = findItemInInventory(log_name)
+			found, slot = findItemInInventory(log_name)
 		end
 
 		turnLeft()
@@ -199,7 +199,7 @@ function depositing()
 		-- TODO: Return to 0,1,0 without breaking furnaces or chests
 		if data.position.y == 1 then
 			while data.facing ~= 1 do
-				trunLeft()
+				turnLeft()
 			end
 			while data.position.x ~= 0 do
 				moveForward()
