@@ -60,7 +60,6 @@ function move_item_to_slot_one(chest_name, item_name)
 
   -- If the item didn't exist, or is already in the first slot, we're done.
   if not slot then
-    printError("Item not found")
     return false
   end
   if slot == 1 then
@@ -203,8 +202,6 @@ function changeVectorReferenceFromNorth(vector, reference)
 end
 
 function faceDirection(direction)
-  print("Currently facing " .. data.facing)
-  print("Changing to " .. direction)
   if direction ~= NORTH and direction ~= EAST and direction ~= SOUTH and direction ~= WEST then
     error(string.format("Invalid direction, \"%s\". Expected one of %s, %s, %s, %s", direction, NORTH, EAST, SOUTH, WEST))
   end
@@ -227,7 +224,6 @@ end
 ---@return boolean Whether the movement was successful.
 ---@return string Error message if any. Empty string if movement was successful.
 function gotoX(x, dig)
-  print(x, data.position.x)
   if x ~= data.position.x then
     local delta = x - data.position.x
     if delta > 0 then
@@ -235,7 +231,6 @@ function gotoX(x, dig)
     else
       faceDirection(WEST)
     end
-    print(delta)
     for _ = 1,math.abs(delta) do
       if dig then
         while turtle.detect() do

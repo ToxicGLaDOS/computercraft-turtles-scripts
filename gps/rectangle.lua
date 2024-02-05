@@ -35,12 +35,9 @@ end
 ---@param zsize integer
 ---@return integer
 local function calculate_side(xsize, zsize)
-  local json = require(".json")
   local positionDelta = subtractPosition(data.position, data.rectangle.initial_position)
 
-  print(json.encode(positionDelta))
   positionDelta = changeVectorReferenceFromNorth(positionDelta, data.rectangle.initial_facing)
-  print(json.encode(positionDelta))
 
   if math.abs(positionDelta.x) == 0 and math.abs(positionDelta.z) ~= zsize - 1 then
     -- 1st line
@@ -71,12 +68,14 @@ local function rectangle(xsize, zsize)
   local error_message
 
   local side = calculate_side(xsize, zsize)
+  print("side: ", side)
 
   if side == 1 then
-    success, error_message = line(zsize)
+    success, error_message = line(zsize - 1)
     if not success then
       return false, error_message
     end
+    moveForward()
     side = calculate_side(xsize, zsize)
   end
 
@@ -85,10 +84,11 @@ local function rectangle(xsize, zsize)
     -- One turn right from our initial direction
     faceDirection(rightDirection(data.rectangle.initial_facing))
 
-    success, error_message = line(xsize)
+    success, error_message = line(xsize - 1)
     if not success then
       return false, error_message
     end
+    moveForward()
     side = calculate_side(xsize, zsize)
   end
 
@@ -97,24 +97,27 @@ local function rectangle(xsize, zsize)
     -- Two turns right from our initial direction (i.e. backwards)
     faceDirection(rightDirection(rightDirection(data.rectangle.initial_facing)))
 
-    success, error_message = line(zsize)
+    success, error_message = line(zsize - 1)
     if not success then
       return false, error_message
     end
+    moveForward()
     side = calculate_side(xsize, zsize)
   end
 
 
   if side == 4 then
-    -- One turn left from our initial direction (i.e. backwards)
+    -- One turn left from our initial direction
     faceDirection(leftDirection(data.rectangle.initial_facing))
 
-    success, error_message = line(xsize)
+    success, error_message = line(xsize - 1)
     if not success then
       return false, error_message
     end
+    moveForward()
   end
 
+  print("Facing back to initial")
   faceDirection(data.rectangle.initial_facing)
 
   data.rectangle = nil

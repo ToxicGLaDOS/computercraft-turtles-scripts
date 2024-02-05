@@ -4,7 +4,7 @@ local function init_line()
   if data.line == nil then
     local selected_item = turtle.getItemDetail()
     if selected_item == nil then
-      error("Line needs the build item selected upon startup")
+      return false, "No build item"
     end
 
     data.line = {
@@ -15,6 +15,8 @@ local function init_line()
 
     saveData()
   end
+
+  return true, ""
 end
 
 local function selectBuildItem()
@@ -32,7 +34,10 @@ end
 
 local function line(length)
   if data.line == nil then
-    init_line()
+    local success, error_message = init_line()
+    if not success then
+      return false, error_message
+    end
   else
     -- How much we've moved since we started
     local positionDelta = subtractPosition(data.position, data.line.initial_position)
@@ -41,8 +46,6 @@ local function line(length)
     else
       length = length - math.abs(positionDelta.z)
     end
-
-    print(length)
   end
 
   for i=1,length do
