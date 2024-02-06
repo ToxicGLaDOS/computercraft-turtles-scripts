@@ -21,10 +21,16 @@ end
 
 local function selectBuildItem()
   local selected_item = turtle.getItemDetail()
-  -- I think this has a bug cuz selected_item is a table and build_item is a string?
+
+  if selected_item ~= nil then
+    selected_item = selected_item.name
+  end
+
   if selected_item ~= data.line.build_item then
     local success, slot = findItemInInventory(data.line.build_item)
-    if not success then
+    if success then
+      turtle.select(slot)
+    else
       return false, "No build item"
     end
   end

@@ -362,6 +362,23 @@ function findItemInInventory(item_name)
 	return false, nil
 end
 
+---Digs until nothing is in front of the turtle
+-- used because falling blocks might fall in front of the turtle
+function dig_forward_all()
+  while turtle.detect() do
+    turtle.dig()
+  end
+end
+
+---Digs until nothing is above the turtle
+-- used because falling blocks might fall on top of the turtle
+function dig_up_all()
+  while turtle.detectUp() do
+    turtle.digUp()
+  end
+end
+
+
 function find_biggest_item_stack(item_name)
 	max = 0
 	slot = 0

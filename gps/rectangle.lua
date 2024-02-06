@@ -3,9 +3,16 @@ local line = require ".gps.line"
 
 local function selectBuildItem()
   local selected_item = turtle.getItemDetail()
-  if selected_item ~= data.rectangle_build_item then
-    local success, slot = findItemInInventory(data.rectangle_build_item)
-    if not success then
+
+  if selected_item ~= nil then
+    selected_item = selected_item.name
+  end
+
+  if selected_item ~= data.rectangle.build_item then
+    local success, slot = findItemInInventory(data.rectangle.build_item)
+    if success then
+      turtle.select(slot)
+    else
       return false, "No build item"
     end
   end
@@ -17,7 +24,7 @@ local function init_rectangle()
   if data.rectangle == nil then
     local selected_item = turtle.getItemDetail()
     if selected_item == nil then
-      error("Rectangle needs the build item selected upon startup")
+      return false, "No build item"
     end
 
     data.rectangle = {
@@ -27,6 +34,8 @@ local function init_rectangle()
     }
     saveData()
   end
+
+  return true, ""
 end
 
 
@@ -57,24 +66,28 @@ local function calculate_side(xsize, zsize)
 end
 
 local function rectangle(xsize, zsize)
-  init_rectangle()
+  local success, error_message = init_rectangle()
+  if not success then
+    return false, error_message
+  end
 
-  local success, slot = findItemInInventory(data.rectangle.build_item)
+  local slot
+  success, slot = findItemInInventory(data.rectangle.build_item)
   if not success then
     return false, "No build item"
   end
   turtle.select(slot)
 
-  local error_message
-
   local side = calculate_side(xsize, zsize)
   print("side: ", side)
 
   if side == 1 then
+    selectBuildItem()
     success, error_message = line(zsize - 1)
     if not success then
       return false, error_message
     end
+    dig_forward_all()
     moveForward()
     side = calculate_side(xsize, zsize)
   end
@@ -84,10 +97,12 @@ local function rectangle(xsize, zsize)
     -- One turn right from our initial direction
     faceDirection(rightDirection(data.rectangle.initial_facing))
 
+    selectBuildItem()
     success, error_message = line(xsize - 1)
     if not success then
       return false, error_message
     end
+    dig_forward_all()
     moveForward()
     side = calculate_side(xsize, zsize)
   end
@@ -97,10 +112,12 @@ local function rectangle(xsize, zsize)
     -- Two turns right from our initial direction (i.e. backwards)
     faceDirection(rightDirection(rightDirection(data.rectangle.initial_facing)))
 
+    selectBuildItem()
     success, error_message = line(zsize - 1)
     if not success then
       return false, error_message
     end
+    dig_forward_all()
     moveForward()
     side = calculate_side(xsize, zsize)
   end
@@ -110,10 +127,12 @@ local function rectangle(xsize, zsize)
     -- One turn left from our initial direction
     faceDirection(leftDirection(data.rectangle.initial_facing))
 
+    selectBuildItem()
     success, error_message = line(xsize - 1)
     if not success then
       return false, error_message
     end
+    dig_forward_all()
     moveForward()
   end
 
