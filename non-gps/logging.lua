@@ -4,7 +4,7 @@
 -- The turtle should also start with at least one sapling in it's inventory
 -- more will make things go faster, but one should be enough to kick start it
 
-local util = require "non-gps.util"
+local util = require ".non-gps.util"
 
 size = 17
 
@@ -19,7 +19,7 @@ DEPOSITING = 4
 
 defaultState(PLANTING)
 
-final_z = (size - 1) * (size % 2)
+final_z = -(size - 1) * (size % 2)
 
 function plant_move()
 	found, slot = findItemInInventory(sapling_name)
@@ -41,24 +41,24 @@ function planting()
 	elseif data.position.z == final_z and data.position.x == size - 1 then
 		changeState(RETURNING_HOME)
 	elseif data.facing == NORTH then
-		if data.position.z < size - 1 then
+		if -data.position.z < size - 1 then
 			plant_move()
-		elseif data.position.z == size - 1 then
+		elseif -data.position.z == size - 1 then
 			changeState(CHANGING_LANES)
 			turnRight()
 		end
 	elseif data.facing == EAST then
-		if data.position.z == size - 1 then
+		if -data.position.z == size - 1 then
 			turnRight()
-		elseif data.position.z == 0 then
+		elseif -data.position.z == 0 then
 			turnLeft()
 		else
 			error("Bad state while facing EAST")
 		end
 	elseif data.facing == SOUTH then
-		if data.position.z > 0 then
+		if -data.position.z > 0 then
 			plant_move()
-		elseif data.position.z == 0 then
+		elseif -data.position.z == 0 then
 			changeState(CHANGING_LANES)
 			turnLeft()
 		end

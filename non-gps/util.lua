@@ -53,7 +53,7 @@ end
 ---@param chest_name string The name of the chest to search.
 ---@param item_name string The name of the item to find.
 ---@return boolean success Whether or not the item was successfully moved to slot one (or already existed there)
-function move_item_to_slot_one(chest_name, item_name)
+local function move_item_to_slot_one(chest_name, item_name)
   local list = peripheral.call(chest_name, "list")
   local size = peripheral.call(chest_name, "size")
   local slot = find_item(list, item_name)
@@ -92,15 +92,62 @@ function move_item_to_slot_one(chest_name, item_name)
   return true
 end
 
-function copyPosition(position)
+local function copyPosition(position)
 	return {x=position.x, y=position.y, z=position.z}
 end
 
-function subtractPosition(p1, p2)
+local function subtractPosition(p1, p2)
   return {x=p1.x-p2.x, y=p1.y-p2.y, z=p1.z-p2.z}
 end
 
-function positionEqual(p1, p2)
+local function saveData()
+	local f = fs.open("data", "w")
+	f.write(json.encode(data))
+	f.close()
+end
+
+local function moveForward()
+	if data.facing == NORTH then
+		data.position.z = data.position.z - 1
+	elseif data.facing == EAST then
+		data.position.x = data.position.x + 1
+	elseif data.facing == SOUTH then
+		data.position.z = data.position.z + 1
+	elseif data.facing == WEST then
+		data.position.x = data.position.x - 1
+	end
+	saveData()
+	return turtle.forward()
+end
+
+local function moveBack()
+	if data.facing == NORTH then
+		data.position.z = data.position.z + 1
+	elseif data.facing == EAST then
+		data.position.x = data.position.x - 1
+	elseif data.facing == SOUTH then
+		data.position.z = data.position.z - 1
+	elseif data.facing == WEST then
+		data.position.x = data.position.x + 1
+	end
+	saveData()
+	return turtle.back()
+end
+
+
+local function moveDown()
+	data.position.y = data.position.y - 1
+	saveData()
+	return turtle.down()
+end
+
+local function moveUp()
+	data.position.y = data.position.y + 1
+	saveData()
+	return turtle.up()
+end
+
+local function positionEqual(p1, p2)
   if p1.x ~= p2.x then
     return false
   elseif p1.y ~= p2.y then
@@ -112,13 +159,13 @@ function positionEqual(p1, p2)
   return true
 end
 
-function defaultState(state)
+local function defaultState(state)
 	if data.state == nil then
 		data.state = state
 	end
 end
 
-function oppositeDirection(direction)
+local function oppositeDirection(direction)
   if direction == NORTH then
     return SOUTH
   elseif direction == EAST then
@@ -130,7 +177,7 @@ function oppositeDirection(direction)
   end
 end
 
-function leftDirection(direction)
+local function leftDirection(direction)
   if direction == NORTH then
     return WEST
   elseif direction == EAST then
@@ -142,7 +189,7 @@ function leftDirection(direction)
   end
 end
 
-function rightDirection(direction)
+local function rightDirection(direction)
   if direction == NORTH then
     return EAST
   elseif direction == EAST then
@@ -156,7 +203,7 @@ end
 
 ---Rotates a vector 90 degrees clockwise ignoring the y value
 ---@param vector table
-function rotateVector90Clockwise(vector)
+local function rotateVector90Clockwise(vector)
   -- This looks weird, but I'm pretty sure it's correct
   -- Remeber that north in minecraft is negative Z.
   -- {0,  0, -1} -> {1,  0,  0} north becomes east
@@ -177,7 +224,7 @@ end
 ---@param vector any
 ---@param reference any
 ---@return any
-function changeVectorReferenceToNorth(vector, reference)
+local function changeVectorReferenceToNorth(vector, reference)
   if reference == NORTH then
     return vector
   elseif reference == EAST then
@@ -189,7 +236,7 @@ function changeVectorReferenceToNorth(vector, reference)
   end
 end
 
-function changeVectorReferenceFromNorth(vector, reference)
+local function changeVectorReferenceFromNorth(vector, reference)
   if reference == NORTH then
     return vector
   elseif reference == EAST then
@@ -201,7 +248,85 @@ function changeVectorReferenceFromNorth(vector, reference)
   end
 end
 
-function faceDirection(direction)
+---Get the item slot for a given item in turtle inventory
+---@param item_name string
+---@return boolean success Whether the item was found in the turtle's inventory.
+---@return integer|nil slot The slot of the item if found.
+local function findItemInInventory(item_name)
+	for i=1,16 do
+		details = turtle.getItemDetail(i)
+		if details ~= nil then
+			if details.name == item_name then
+				return true, i
+			end
+		end
+	end
+
+	return false, nil
+end
+
+---Digs until nothing is in front of the turtle
+-- used because falling blocks might fall in front of the turtle
+local function dig_forward_all()
+  while turtle.detect() do
+    turtle.dig()
+  end
+end
+
+---Digs until nothing is above the turtle
+-- used because falling blocks might fall on top of the turtle
+local function dig_up_all()
+  while turtle.detectUp() do
+    turtle.digUp()
+  end
+end
+
+
+local function find_biggest_item_stack(item_name)
+	max = 0
+	slot = 0
+	for i=1,16 do
+		details = turtle.getItemDetail(i)
+		count = turtle.getItemCount(i)
+		if details ~= nil and details.name == item_name and count > max then
+			max = count
+			slot = i
+		end
+	end
+
+	return slot
+end
+
+local function turnRight()
+	if data.facing == NORTH then
+		data.facing = EAST
+	elseif data.facing == EAST then
+		data.facing = SOUTH
+	elseif data.facing == SOUTH then
+		data.facing = WEST
+	elseif data.facing == WEST then
+		data.facing = NORTH
+	end
+	saveData()
+	turtle.turnRight()
+end
+
+
+local function turnLeft()
+	if data.facing == NORTH then
+		data.facing = WEST
+	elseif data.facing == EAST then
+		data.facing = NORTH
+	elseif data.facing == SOUTH then
+		data.facing = EAST
+	elseif data.facing == WEST then
+		data.facing = SOUTH
+	end
+	saveData()
+	turtle.turnLeft()
+end
+
+local function faceDirection(direction)
   if direction ~= NORTH and direction ~= EAST and direction ~= SOUTH and direction ~= WEST then
     error(string.format("Invalid direction, \"%s\". Expected one of %s, %s, %s, %s", direction, NORTH, EAST, SOUTH, WEST))
   end
@@ -223,7 +348,7 @@ end
 ---@param dig boolean Whether to dig to get to the desired position or not.
 ---@return boolean Whether the movement was successful.
 ---@return string Error message if any. Empty string if movement was successful.
-function gotoX(x, dig)
+local function gotoX(x, dig)
   if x ~= data.position.x then
     local delta = x - data.position.x
     if delta > 0 then
@@ -253,7 +378,7 @@ end
 ---@param dig boolean Whether to dig to get to the desired position or not.
 ---@return boolean Whether the movement was successful.
 ---@return string Error message if any. Empty string if movement was successful.
-function gotoZ(z, dig)
+local function gotoZ(z, dig)
   if z ~= data.position.z then
     local delta = z - data.position.z
     -- For some reason minecraft has north pointed
@@ -286,7 +411,7 @@ end
 ---@param dig boolean Whether to dig to get to the desired position or not.
 ---@return boolean Whether the movement was successful.
 ---@return string Error message if any. Empty string if movement was successful.
-function gotoY(y, dig)
+local function gotoY(y, dig)
 
   if y ~= data.position.y then
     local delta = y - data.position.y
@@ -326,7 +451,7 @@ end
 ---@param dig boolean Whether to dig to get to the desired position or not.
 ---@return boolean Whether the movement was successful.
 ---@return string Error message if any. Empty string if movement was successful.
-function gotoPosition(position, dig)
+local function gotoPosition(position, dig)
   local success, error_message = gotoX(position.x, dig)
   if not success then
     return false, error_message
@@ -345,134 +470,7 @@ function gotoPosition(position, dig)
   return true, ""
 end
 
----Get the item slot for a given item in turtle inventory
----@param item_name string
----@return boolean success Whether the item was found in the turtle's inventory.
----@return integer|nil slot The slot of the item if found.
-function findItemInInventory(item_name)
-	for i=1,16 do
-		details = turtle.getItemDetail(i)
-		if details ~= nil then
-			if details.name == item_name then
-				return true, i
-			end
-		end
-	end
-
-	return false, nil
-end
-
----Digs until nothing is in front of the turtle
--- used because falling blocks might fall in front of the turtle
-function dig_forward_all()
-  while turtle.detect() do
-    turtle.dig()
-  end
-end
-
----Digs until nothing is above the turtle
--- used because falling blocks might fall on top of the turtle
-function dig_up_all()
-  while turtle.detectUp() do
-    turtle.digUp()
-  end
-end
-
-
-function find_biggest_item_stack(item_name)
-	max = 0
-	slot = 0
-	for i=1,16 do
-		details = turtle.getItemDetail(i)
-		count = turtle.getItemCount(i)
-		if details ~= nil and details.name == item_name and count > max then
-			max = count
-			slot = i
-		end
-	end
-
-	return slot
-end
-
-
-function saveData()
-	local f = fs.open("data", "w")
-	f.write(json.encode(data))
-	f.close()
-end
-
-function moveForward()
-	if data.facing == NORTH then
-		data.position.z = data.position.z - 1
-	elseif data.facing == EAST then
-		data.position.x = data.position.x + 1
-	elseif data.facing == SOUTH then
-		data.position.z = data.position.z + 1
-	elseif data.facing == WEST then
-		data.position.x = data.position.x - 1
-	end
-	saveData()
-	return turtle.forward()
-end
-
-function moveBack()
-	if data.facing == NORTH then
-		data.position.z = data.position.z + 1
-	elseif data.facing == EAST then
-		data.position.x = data.position.x - 1
-	elseif data.facing == SOUTH then
-		data.position.z = data.position.z - 1
-	elseif data.facing == WEST then
-		data.position.x = data.position.x + 1
-	end
-	saveData()
-	return turtle.back()
-end
-
-
-function moveDown()
-	data.position.y = data.position.y - 1
-	saveData()
-	return turtle.down()
-end
-
-function moveUp()
-	data.position.y = data.position.y + 1
-	saveData()
-	return turtle.up()
-end
-
-
-function turnRight()
-	if data.facing == NORTH then
-		data.facing = EAST
-	elseif data.facing == EAST then
-		data.facing = SOUTH
-	elseif data.facing == SOUTH then
-		data.facing = WEST
-	elseif data.facing == WEST then
-		data.facing = NORTH
-	end
-	saveData()
-	turtle.turnRight()
-end
-
-
-function turnLeft()
-	if data.facing == NORTH then
-		data.facing = WEST
-	elseif data.facing == EAST then
-		data.facing = NORTH
-	elseif data.facing == SOUTH then
-		data.facing = EAST
-	elseif data.facing == WEST then
-		data.facing = SOUTH
-	end
-	saveData()
-	turtle.turnLeft()
-end
-
-function findNonfullStack(item)
+local function findNonfullStack(item)
 	for i=1,16 do
 		detail = turtle.getItemDetail(i)
 		if detail ~= nil and detail.name == item then
@@ -486,7 +484,7 @@ function findNonfullStack(item)
 	return 0
 end
 
-function needsConsolidation(item)
+local function needsConsolidation(item)
 	non_full_stack_found = 0
 	for i=1,16 do
 		detail = turtle.getItemDetail(i)
@@ -505,7 +503,7 @@ function needsConsolidation(item)
 	return false, 0, 0
 end
 
-function findConsolidatabileSlotsWithItem(item)
+local function findConsolidatabileSlotsWithItem(item)
 	slots = {}
 	for i=1,16 do
 		detail = turtle.getItemDetail(i)
@@ -518,7 +516,7 @@ function findConsolidatabileSlotsWithItem(item)
 	return slots
 end
 
-function consolidateInventory()
+local function consolidateInventory()
 	items = {}
 	for i=1,16 do
 		detail = turtle.getItemDetail(i)
@@ -551,14 +549,14 @@ function consolidateInventory()
 	end
 end
 
-function changeState(new_state)
+local function changeState(new_state)
 	writeLog(string.format("Changing state to %s", new_state))
 	data.state = new_state
 	saveData()
 	writeLog(string.format("Changed state to %s", new_state))
 end
 
-function writeLog(message)
+local function writeLog(message)
 	if write_log == true then
 		local h = fs.open("log", "a")
 		h.writeLine(message)
@@ -568,7 +566,7 @@ function writeLog(message)
 	end
 end
 
-function hasEmptySlot()
+local function hasEmptySlot()
 	for i=1,16 do
 		local amount = turtle.getItemCount(i)
 		if amount == 0 then
@@ -578,4 +576,39 @@ function hasEmptySlot()
 
 	return false
 end
+
+return {
+  move_item_to_slot_one=move_item_to_slot_one,
+  copyPosition=copyPosition,
+  subtractPosition=subtractPosition,
+  positionEqual=positionEqual,
+  defaultState=defaultState,
+  oppositeDirection=oppositeDirection,
+  leftDirection=leftDirection,
+  rightDirection=rightDirection,
+  dig_forward_all=dig_forward_all,
+  dig_up_all=dig_up_all,
+  rotateVector90Clockwise=rotateVector90Clockwise,
+  changeVectorReferenceFromNorth=changeVectorReferenceFromNorth,
+  changeVectorReferenceToNorth=changeVectorReferenceToNorth,
+  faceDirection=faceDirection,
+  gotoX=gotoX,
+  gotoY=gotoY,
+  gotoZ=gotoZ,
+  gotoPosition=gotoPosition,
+  findItemInInventory=findItemInInventory,
+  find_biggest_item_stack=find_biggest_item_stack,
+  moveUp=moveUp,
+  moveDown=moveDown,
+  moveForward=moveForward,
+  moveBack=moveBack,
+  turnLeft=turnLeft,
+  turnRight=turnRight,
+  findNonfullStack=findNonfullStack,
+  findConsolidatabileSlotsWithItem=findConsolidatabileSlotsWithItem,
+  consolidateInventory=consolidateInventory,
+  changeState=changeState,
+  writeLog=writeLog,
+  hasEmptySlot=hasEmptySlot
+}
 

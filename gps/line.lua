@@ -1,4 +1,4 @@
-require ".gps.util"
+local util = require ".gps.util"
 
 local function init_line()
   if data.line == nil then
@@ -8,12 +8,12 @@ local function init_line()
     end
 
     data.line = {
-      initial_position = copyPosition(data.position),
+      initial_position = util.copyPosition(data.position),
       initial_facing = data.facing,
       build_item = selected_item.name
     }
 
-    saveData()
+    util.saveData()
   end
 
   return true, ""
@@ -27,7 +27,7 @@ local function selectBuildItem()
   end
 
   if selected_item ~= data.line.build_item then
-    local success, slot = findItemInInventory(data.line.build_item)
+    local success, slot = util.findItemInInventory(data.line.build_item)
     if success then
       turtle.select(slot)
     else
@@ -46,7 +46,7 @@ local function line(length)
     end
   else
     -- How much we've moved since we started
-    local positionDelta = subtractPosition(data.position, data.line.initial_position)
+    local positionDelta = util.subtractPosition(data.position, data.line.initial_position)
     if data.line.initial_facing == EAST or data.line.initial_facing == WEST then
       length = length - math.abs(positionDelta.x)
     else
@@ -69,12 +69,12 @@ local function line(length)
     end
 
     if i ~= length then
-      moveForward()
+      util.moveForward()
     end
   end
 
   data.line = nil
-  saveData()
+  util.saveData()
 
   return true, ""
 end

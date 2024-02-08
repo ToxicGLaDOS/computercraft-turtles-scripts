@@ -13,7 +13,7 @@
 -- that the turtle digs up along the way.
 
 local rectangle = require ".gps.rectangle"
-require ".gps.util"
+local util = require ".gps.util"
 
 KEEP_IN_INVENTORY = {"computercraft:wireless_modem_advanced",
   "minecraft:compass",
@@ -29,7 +29,7 @@ local function selectBuildItem()
   end
 
   if selected_item ~= data.walls.build_item then
-    local success, slot = findItemInInventory(data.walls.build_item)
+    local success, slot = util.findItemInInventory(data.walls.build_item)
     if success then
       turtle.select(slot)
     else
@@ -59,7 +59,7 @@ local function init_walls()
       initial_facing=data.facing,
       build_item = selected_item.name
     }
-    saveData()
+    util.saveData()
     while turtle.detect() do
       turtle.dig()
     end
@@ -68,7 +68,7 @@ local function init_walls()
     -- in front of the turtles initial position
     -- We do this so that the turtle has a clear path
     -- back to the chest to restock
-    moveForward()
+    util.moveForward()
   end
 
   return true, ""
@@ -89,24 +89,24 @@ local function build_rectangle(xsize, zsize)
   local out_of_build_item = error_message == "No build item"
 
   if out_of_build_item then
-    local stop_position = copyPosition(data.position)
+    local stop_position = util.copyPosition(data.position)
     data.walls.stop_position = stop_position
     -- Return home
     -- We return in this order so we don't
     -- have to break anything we put down on this layer
     if north_or_south(data.walls.initial_facing) then
-      gotoZ(data.walls.initial_position.z, true)
-      gotoX(data.walls.initial_position.x, true)
-      gotoY(data.walls.initial_position.y, true)
+      util.gotoZ(data.walls.initial_position.z, true)
+      util.gotoX(data.walls.initial_position.x, true)
+      util.gotoY(data.walls.initial_position.y, true)
     else
-      gotoX(data.walls.initial_position.x, true)
-      gotoZ(data.walls.initial_position.z, true)
-      gotoY(data.walls.initial_position.y, true)
+      util.gotoX(data.walls.initial_position.x, true)
+      util.gotoZ(data.walls.initial_position.z, true)
+      util.gotoY(data.walls.initial_position.y, true)
     end
 
 
     -- Drop all non build items
-    faceDirection(leftDirection(data.walls.initial_facing))
+    util.faceDirection(util.leftDirection(data.walls.initial_facing))
     for i=1,16 do
       local item_details = turtle.getItemDetail(i)
       if item_details ~= nil and item_details.name ~= data.walls.build_item and not contains(KEEP_IN_INVENTORY, item_details.name) then
@@ -116,7 +116,7 @@ local function build_rectangle(xsize, zsize)
     end
 
     -- Fill up on build items
-    faceDirection(oppositeDirection(data.walls.initial_facing))
+    util.faceDirection(util.oppositeDirection(data.walls.initial_facing))
     local chest = peripheral.find("inventory")
     if chest == nil then
       print(string.format("No chest in front of turtle to grab more %s.", data.walls.build_item))
@@ -128,17 +128,17 @@ local function build_rectangle(xsize, zsize)
     print("Waiting for " .. data.walls.build_item)
     -- This outer while loop is basically a retry so we wait
     -- until we can pick up more build items
-    while not findItemInInventory(data.walls.build_item) do
-      while hasEmptySlot() and move_item_to_slot_one(chest_name, data.walls.build_item) do
+    while not util.findItemInInventory(data.walls.build_item) do
+      while util.hasEmptySlot() and util.move_item_to_slot_one(chest_name, data.walls.build_item) do
         turtle.suck()
       end
     end
 
-    gotoY(data.walls.stop_position.y, true)
-    gotoX(data.walls.stop_position.x, true)
-    gotoZ(data.walls.stop_position.z, true)
+    util.gotoY(data.walls.stop_position.y, true)
+    util.gotoX(data.walls.stop_position.x, true)
+    util.gotoZ(data.walls.stop_position.z, true)
     data.walls.stop_position = nil
-    saveData()
+    util.saveData()
 
     -- Recursive call to resume building the rectangle
     -- Doing this recursively menas that we can run out of build items
@@ -163,17 +163,17 @@ local function walls(xsize, ysize, zsize)
   if data.walls.stop_position ~= nil then
     print("Returning to stop position")
     if north_or_south(data.walls.initial_facing) then
-      gotoY(data.walls.stop_position.y, true)
-      gotoX(data.walls.stop_position.x, true)
-      gotoZ(data.walls.stop_position.z, true)
+      util.gotoY(data.walls.stop_position.y, true)
+      util.gotoX(data.walls.stop_position.x, true)
+      util.gotoZ(data.walls.stop_position.z, true)
     else
-      gotoY(data.walls.stop_position.y, true)
-      gotoZ(data.walls.stop_position.z, true)
-      gotoX(data.walls.stop_position.x, true)
+      util.gotoY(data.walls.stop_position.y, true)
+      util.gotoZ(data.walls.stop_position.z, true)
+      util.gotoX(data.walls.stop_position.x, true)
     end
 
     data.walls.stop_position = nil
-    saveData()
+    util.saveData()
   end
 
   local num_completed_layers = data.position.y - data.walls.initial_position.y
@@ -184,8 +184,8 @@ local function walls(xsize, ysize, zsize)
     -- We don't want to move up after the last rectangle
     print(string.format("i: %s, remaining_layers: %s", i, remaining_layers))
     if i ~= remaining_layers then
-      dig_up_all()
-      moveUp()
+      util.dig_up_all()
+      util.moveUp()
     end
   end
 

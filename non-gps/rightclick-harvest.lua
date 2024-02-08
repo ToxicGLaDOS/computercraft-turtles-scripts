@@ -1,8 +1,9 @@
 -- This script the turtle to start in the bottom left of your farming area
 
-local success, err = pcall(require, ".non-gps.util")
+local success, util = pcall(require, ".non-gps.util")
 
 if not success then
+  local err = util
   h = fs.open("error.txt", "w")
   h.write(err)
   h.close()
@@ -14,7 +15,7 @@ size = 10
 HARVESTING = 0
 RETURNING_HOME = 1
 
-defaultState(HARVESTING)
+util.defaultState(HARVESTING)
 
 function suckallDown()
   while turtle.suckDown() do end
@@ -34,12 +35,12 @@ function harvesting()
     if size % 2 == 0 and data.position.z == 0 then
       turtle.placeDown()
       suckallDown()
-      changeState(RETURNING_HOME)
+      util.changeState(RETURNING_HOME)
       return
     elseif size % 2 == 1 and data.position.z == size - 1 then
       turtle.placeDown()
       suckallDown()
-      changeState(RETURNING_HOME)
+      util.changeState(RETURNING_HOME)
       return
     end
   end
@@ -49,46 +50,46 @@ function harvesting()
       if data.position.z == size - 1 then
         turtle.placeDown()
         suckallDown()
-        moveForward()
+        util.moveForward()
       elseif data.position.z == 0 then
-        turnLeft()
+        util.turnLeft()
       end
     elseif data.position.x % 2 == 1 then
       if data.position.z == size - 1 then
-        turnRight()
+        util.turnRight()
       elseif data.position.z == 0 then
         turtle.placeDown()
         suckallDown()
-        moveForward()
+        util.moveForward()
       end
     end
   elseif data.facing == NORTH and data.position.z == size - 1 then
-    turnRight()
+    util.turnRight()
   elseif data.facing == SOUTH and data.position.z == 0 then
-    turnLeft()
+    util.turnLeft()
   elseif data.facing == NORTH or data.facing == SOUTH then
     -- placeDown() is a right click, but you need to have an item
     -- in the selected slot
     turtle.placeDown()
     suckallDown()
-    moveForward()
+    util.moveForward()
   end
 end
 
 function returning_home()
   if data.position.z ~= 0 then
     while data.facing ~= SOUTH do
-      turnRight()
+      util.turnRight()
     end
-    moveForward()
+    util.moveForward()
   elseif data.position.x ~= 0 then
     while data.facing ~= WEST do
-      turnRight()
+      util.turnRight()
     end
-    moveForward()
+    util.moveForward()
   else
     while data.facing ~= WEST do
-      turnLeft()
+      util.turnLeft()
     end
 
     -- Drop everything but the first item
@@ -98,18 +99,18 @@ function returning_home()
     end
 
     if turtle.getFuelLevel() < size * size * 3 then
-      turnLeft()
+      util.turnLeft()
       turtle.suck()
       for i=2,16 do
         turtle.select(i)
         turtle.refuel()
       end
-      turnRight()
+      util.turnRight()
     end
 
-    turnRight()
+    util.turnRight()
 
-    changeState(HARVESTING)
+    util.changeState(HARVESTING)
 
     local tiles = size * size
     local time_per_tile = 0.6
